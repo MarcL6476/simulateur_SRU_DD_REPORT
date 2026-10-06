@@ -25,12 +25,19 @@
   .legend{display:flex;gap:16px;font-size:11px;color:var(--soft);margin-top:6px;}
   .legend span{display:inline-flex;align-items:center;gap:5px;}
   .swatch{width:11px;height:11px;border-radius:2px;display:inline-block;}
+  .citation{background:var(--card);border-left:3px solid var(--sage);border-radius:0 4px 4px 0;padding:10px 14px;margin:0 0 16px;font-size:12.5px;line-height:1.6;color:var(--soft);}
+  .citation .ref{font-weight:650;color:var(--ink);display:block;margin-bottom:4px;}
 </style>
 </head>
 <body>
 <div id="app">
   <h1>Prolongation de la déduction au prélèvement SRU</h1>
-  <p class="sub">Au-delà de 2 ans, une dépense reste déductible si le ratio logements/tiers d'obligation dépasse 3.</p>
+  <p class="sub">Au-delà de 2 ans, une dépense reste déductible si le ratio logements/tiers d'objectif dépasse 3.</p>
+
+  <div class="citation">
+    <span class="ref">Article R302-16-1 du code de la construction et de l'habitation</span>
+    « Les dépenses et moins-values de cession peuvent être déduites du prélèvement au-delà des deux années suivant celle au cours de laquelle elles ouvrent droit à déduction, si le rapport, arrondi à l'entier supérieur, entre le nombre de logements construits ou réalisés à l'aide de ces dépenses et moins-values de cession et le tiers de l'obligation triennale de la période considérée est supérieur à trois. Ce rapport détermine le nombre maximal d'années au cours desquelles ces dépenses peuvent être prises en compte en déduction du prélèvement. »
+  </div>
 
   <div class="controls">
     <div class="ctrl-row">
@@ -39,16 +46,16 @@
       <span class="val" id="logements-out">90</span>
     </div>
     <div class="ctrl-row">
-      <label for="obligation">Obligation triennale</label>
+      <label for="obligation">Objectif triennal</label>
       <input type="range" id="obligation" min="3" max="240" step="3" value="60"/>
       <span class="val" id="obligation-out">60</span>
     </div>
   </div>
 
   <div class="stats">
-    <div class="stat"><p class="lbl">Tiers de l'obligation</p><p class="num" id="tiers-out">20</p></div>
-    <div class="stat"><p class="lbl">Ratio arrondi</p><p class="num" id="ratio-out">5</p></div>
-    <div class="stat"><p class="lbl">Années de déduction</p><p class="num" id="duree-out">5</p></div>
+    <div class="stat"><p class="lbl">Tiers de l'objectif</p><p class="num" id="tiers-out">20</p></div>
+    <div class="stat"><p class="lbl">Ratio</p><p class="num" id="ratio-out">4,5</p></div>
+    <div class="stat"><p class="lbl">Durée de prolongation</p><p class="num" id="duree-out">3 ans</p></div>
   </div>
 
   <div class="timeline-box">
@@ -76,21 +83,26 @@ function recalc(){
   const logements = parseInt(document.getElementById('logements').value);
   const obligation = parseInt(document.getElementById('obligation').value);
   const tiers = obligation / 3;
-  const ratio = Math.ceil(logements / tiers);
-  const annees = ratio > 3 ? ratio : 2;
+  const ratioBrut = logements / tiers;            // affiché sans arrondi
+  const ratioEntier = Math.ceil(ratioBrut);        // arrondi, utilisé pour le calcul légal
+  const annees = ratioEntier > 3 ? ratioEntier : 2;
+  const prolongation = annees > 2 ? annees - 2 : 0;
 
   document.getElementById('logements-out').textContent = logements;
   document.getElementById('obligation-out').textContent = obligation;
   document.getElementById('tiers-out').textContent = Math.round(tiers * 10) / 10;
-  document.getElementById('ratio-out').textContent = ratio;
-  document.getElementById('duree-out').textContent = annees;
+  document.getElementById('ratio-out').textContent = (Math.round(ratioBrut * 10) / 10).toString().replace('.', ',');
+  document.getElementById('duree-out').textContent = prolongation + (prolongation > 1 ? ' ans' : ' an');
 
+  // Échelle fixe (ne dépend pas du résultat) : évite tout effet de seuil où la
+  // barre d'une durée inchangée se redimensionnerait à cause d'une autre valeur.
   const x0 = 20, x1 = 660, track = x1 - x0;
-  const yearsDisplayed = Math.max(8, annees);
-  const pxYear = track / yearsDisplayed;
+  const FIXED_YEARS = 20;
+  const pxYear = track / FIXED_YEARS;
   const grayW = pxYear * Math.min(annees, 2);
   const amberX = x0 + grayW;
-  const amberW = annees > 2 ? pxYear * (annees - 2) : 0;
+  const amberWraw = annees > 2 ? pxYear * (annees - 2) : 0;
+  const amberW = Math.min(amberWraw, x1 - amberX); // sature au bord plutôt que de dépasser
 
   document.getElementById('bar-gray').setAttribute('width', grayW);
   document.getElementById('bar-amber').setAttribute('x', amberX);
