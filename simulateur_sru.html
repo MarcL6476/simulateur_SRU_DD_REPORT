@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Simulateur — prolongation déduction SRU</title>
+<style>
+  :root{ --paper:#F1ECDD;--card:#E8E0CB;--ink:#2B3430;--soft:#5B6259;--sage:#7C8F6B;--line:#D9CBA8;--amber:#C9983D;--amber-bg:#EFD9A6; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;}
+  #app{padding:16px 18px 20px;max-width:760px;margin:0 auto;}
+  h1{margin:0 0 4px;font-size:17px;font-weight:650;}
+  .sub{font-size:12px;color:var(--soft);margin:0 0 16px;}
+  .controls{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:14px 16px;margin-bottom:14px;}
+  .ctrl-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .ctrl-row:last-child{margin-bottom:0;}
+  .ctrl-row label{font-size:13px;color:var(--soft);min-width:170px;}
+  .ctrl-row input[type=range]{flex:1;accent-color:var(--sage);}
+  .ctrl-row .val{font-size:14px;font-weight:650;min-width:40px;text-align:right;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px;}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:10px 12px;}
+  .stat .lbl{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--soft);font-weight:600;margin:0 0 4px;}
+  .stat .num{font-size:22px;font-weight:650;margin:0;}
+  .timeline-box{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px 16px 4px;}
+  .legend{display:flex;gap:16px;font-size:11px;color:var(--soft);margin-top:6px;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .swatch{width:11px;height:11px;border-radius:2px;display:inline-block;}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>Prolongation de la déduction au prélèvement SRU</h1>
+  <p class="sub">Au-delà de 2 ans, une dépense reste déductible si le ratio logements/tiers d'obligation dépasse 3.</p>
+
+  <div class="controls">
+    <div class="ctrl-row">
+      <label for="logements">Logements réalisés</label>
+      <input type="range" id="logements" min="0" max="200" step="1" value="90"/>
+      <span class="val" id="logements-out">90</span>
+    </div>
+    <div class="ctrl-row">
+      <label for="obligation">Obligation triennale</label>
+      <input type="range" id="obligation" min="3" max="240" step="3" value="60"/>
+      <span class="val" id="obligation-out">60</span>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><p class="lbl">Tiers de l'obligation</p><p class="num" id="tiers-out">20</p></div>
+    <div class="stat"><p class="lbl">Ratio arrondi</p><p class="num" id="ratio-out">5</p></div>
+    <div class="stat"><p class="lbl">Années de déduction</p><p class="num" id="duree-out">5</p></div>
+  </div>
+
+  <div class="timeline-box">
+    <svg width="100%" viewBox="0 0 680 120" role="img">
+      <title>Durée de déduction résultante</title>
+      <desc>Barre représentant le délai de base de 2 ans, prolongé selon le ratio.</desc>
+      <rect id="bar-gray" x="20" y="30" width="140" height="18" rx="4" fill="var(--soft)"/>
+      <rect id="bar-amber" x="160" y="30" width="210" height="18" rx="4" fill="var(--amber)"/>
+      <line id="bar-reste" x1="370" y1="39" x2="660" y2="39" stroke="var(--line)" stroke-width="2"/>
+      <text x="20" y="66" font-size="11" fill="var(--soft)">N</text>
+      <line id="leader-base" x1="160" y1="48" x2="160" y2="78" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 2"/>
+      <text id="label-base" x="160" y="92" font-size="11" fill="var(--soft)" text-anchor="middle">Fin du délai de base</text>
+      <line id="leader-ext" x1="370" y1="48" x2="370" y2="78" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 2"/>
+      <text id="label-ext" x="370" y="92" font-size="11" fill="var(--soft)" text-anchor="middle">Fin de la prolongation</text>
+    </svg>
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--soft)"></span>Délai de base (2 ans)</span>
+      <span><span class="swatch" style="background:var(--amber)"></span>Prolongation (ratio &gt; 3)</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function recalc(){
+  const logements = parseInt(document.getElementById('logements').value);
+  const obligation = parseInt(document.getElementById('obligation').value);
+  const tiers = obligation / 3;
+  const ratio = Math.ceil(logements / tiers);
+  const annees = ratio > 3 ? ratio : 2;
+
+  document.getElementById('logements-out').textContent = logements;
+  document.getElementById('obligation-out').textContent = obligation;
+  document.getElementById('tiers-out').textContent = Math.round(tiers * 10) / 10;
+  document.getElementById('ratio-out').textContent = ratio;
+  document.getElementById('duree-out').textContent = annees;
+
+  const x0 = 20, x1 = 660, track = x1 - x0;
+  const yearsDisplayed = Math.max(8, annees);
+  const pxYear = track / yearsDisplayed;
+  const grayW = pxYear * Math.min(annees, 2);
+  const amberX = x0 + grayW;
+  const amberW = annees > 2 ? pxYear * (annees - 2) : 0;
+
+  document.getElementById('bar-gray').setAttribute('width', grayW);
+  document.getElementById('bar-amber').setAttribute('x', amberX);
+  document.getElementById('bar-amber').setAttribute('width', amberW);
+  document.getElementById('bar-reste').setAttribute('x1', amberX + amberW);
+
+  const baseX = x0 + pxYear * 2;
+  document.getElementById('leader-base').setAttribute('x1', baseX);
+  document.getElementById('leader-base').setAttribute('x2', baseX);
+  document.getElementById('label-base').setAttribute('x', baseX);
+
+  const extVisible = annees > 2;
+  document.getElementById('leader-ext').style.display = extVisible ? '' : 'none';
+  document.getElementById('label-ext').style.display = extVisible ? '' : 'none';
+  if (extVisible) {
+    const extX = amberX + amberW;
+    document.getElementById('leader-ext').setAttribute('x1', extX);
+    document.getElementById('leader-ext').setAttribute('x2', extX);
+    document.getElementById('label-ext').setAttribute('x', extX);
+  }
+}
+document.getElementById('logements').addEventListener('input', recalc);
+document.getElementById('obligation').addEventListener('input', recalc);
+recalc();
+</script>
+</body>
+</html>
