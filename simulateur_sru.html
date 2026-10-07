@@ -2,342 +2,151 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Fiche commentaires — opération</title>
-<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Simulateur — prolongation déduction SRU</title>
 <style>
-  :root{ --paper:#F1ECDD;--card:#E8E0CB;--ink:#2B3430;--soft:#5B6259;--sage:#7C8F6B;--line:#D9CBA8;--warn:#C0532A; }
+  :root{ --paper:#F1ECDD;--card:#E8E0CB;--ink:#2B3430;--soft:#5B6259;--sage:#7C8F6B;--line:#D9CBA8;--amber:#C9983D; }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --paper:#1f2420;--card:#2a312c;--ink:#ece6d4;--soft:#a9ae9f;--line:#47503f; } }
+  :root[data-theme="dark"]{ --paper:#1f2420;--card:#2a312c;--ink:#ece6d4;--soft:#a9ae9f;--line:#47503f; }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;}
-  #app{padding:14px 16px 20px;max-width:640px;margin:0 auto;}
-  h1{margin:0;font-size:16px;font-weight:650;}
-  .annee{font-size:11px;color:var(--soft);margin:2px 0 14px;}
-  .champ{margin-bottom:12px;}
-  .champ label{display:block;font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--soft);font-weight:600;margin-bottom:4px;}
-  .champ textarea{width:100%;min-height:52px;resize:vertical;font-family:inherit;font-size:13px;line-height:1.4;padding:7px 9px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--ink);}
-  .champ textarea:disabled{background:var(--card);color:var(--soft);}
-  .champ .etat{font-size:10px;color:var(--sage);height:14px;margin-top:2px;opacity:0;transition:opacity .3s;}
-  .champ .etat.show{opacity:1;}
-  .non-mappe{font-size:12px;color:var(--soft);font-style:italic;padding:6px 0;}
-  .btn-archiver{width:100%;background:var(--sage);color:#fff;border:none;border-radius:4px;padding:10px;font-size:13px;font-weight:650;cursor:pointer;margin:6px 0 18px;}
-  .btn-archiver:hover{opacity:.92;}
-  .btn-archiver:disabled{background:var(--line);color:var(--soft);cursor:default;}
-  .section-label{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);font-weight:600;margin:0 0 8px;border-top:1px solid var(--line);padding-top:12px;}
-  .archive-item{background:var(--card);border:1px solid var(--line);border-radius:4px;margin-bottom:6px;overflow:hidden;}
-  .archive-head{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;cursor:pointer;font-size:12.5px;}
-  .archive-head .annee-badge{font-weight:650;}
-  .archive-head .date{color:var(--soft);font-size:11px;}
-  .archive-body{display:none;padding:0 10px 10px;border-top:1px solid var(--line);}
-  .archive-item.ouvert .archive-body{display:block;}
-  .archive-body .ligne{font-size:12px;line-height:1.5;margin-top:8px;}
-  .archive-body .ligne .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--soft);font-weight:600;display:block;margin-bottom:2px;}
-  .vide{font-size:12px;color:var(--soft);font-style:italic;}
-  .avertissement{font-size:11px;color:var(--warn);background:#F7E4D8;border:1px solid var(--warn);border-radius:4px;padding:6px 9px;margin-bottom:12px;}
-  #empty{text-align:center;padding:48px 12px;color:var(--soft);font-size:13px;}
-  .hidden{display:none!important;}
+  :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;}
+  #app{padding:16px 18px 20px;max-width:760px;margin:0 auto;}
+  h1{margin:0 0 4px;font-size:17px;font-weight:650;}
+  .sub{font-size:12px;color:var(--soft);margin:0 0 16px;}
+  .controls{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:14px 16px;margin-bottom:14px;}
+  .ctrl-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .ctrl-row:last-child{margin-bottom:0;}
+  .ctrl-row label{font-size:13px;color:var(--soft);min-width:140px;}
+  .ctrl-row input[type=range]{flex:1;accent-color:var(--sage);}
+  .ctrl-row input[type=number]{width:76px;font:inherit;font-size:14px;font-weight:650;text-align:right;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:4px 6px;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px;}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:10px 12px;}
+  .stat .lbl{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--soft);font-weight:600;margin:0 0 4px;}
+  .stat .num{font-size:22px;font-weight:650;margin:0;}
+  .stat .note{font-size:11px;color:var(--soft);margin:2px 0 0;}
+  .timeline-box{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px 16px 8px;}
+  .legend{display:flex;gap:16px;font-size:11px;color:var(--soft);margin-top:6px;flex-wrap:wrap;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .swatch{width:11px;height:11px;border-radius:2px;display:inline-block;}
+  .citation{background:var(--card);border-left:3px solid var(--sage);border-radius:0 4px 4px 0;padding:10px 14px;margin:0 0 16px;font-size:12.5px;line-height:1.6;color:var(--soft);}
+  .citation .ref{font-weight:650;color:var(--ink);display:block;margin-bottom:4px;}
 </style>
 </head>
 <body>
 <div id="app">
-  <div id="fiche" class="hidden">
-    <h1 id="titre">Opération</h1>
-    <div class="annee" id="sousTitre"></div>
+  <h1>Durée de déduction au prélèvement SRU</h1>
+  <p class="sub">Une dépense est prise en compte l'année N et les 2 années suivantes (3 ans). Au-delà, elle reste déductible si le ratio logements/tiers d'objectif dépasse 3.</p>
 
-    <div id="avertissementArchives" class="avertissement hidden"></div>
-
-    <div id="champs"></div>
-
-    <button class="btn-archiver" id="btnArchiver">Archiver le bilan</button>
-
-    <div class="section-label">Bilans archivés</div>
-    <div id="listeArchives"></div>
+  <div class="citation">
+    <span class="ref">Article R302-16-1 du code de la construction et de l'habitation</span>
+    « Les dépenses et moins-values de cession peuvent être déduites du prélèvement au-delà des deux années suivant celle au cours de laquelle elles ouvrent droit à déduction, si le rapport, arrondi à l'entier supérieur, entre le nombre de logements construits ou réalisés à l'aide de ces dépenses et moins-values de cession et le tiers de l'obligation triennale de la période considérée est supérieur à trois. Ce rapport détermine le nombre maximal d'années au cours desquelles ces dépenses peuvent être prises en compte en déduction du prélèvement. »
   </div>
-  <div id="empty">Sélectionnez une opération.</div>
+
+  <div class="controls">
+    <div class="ctrl-row">
+      <label for="logements">Logements réalisés</label>
+      <input type="range" id="logements" min="0" max="240" step="1" value="90"/>
+      <input type="number" id="logements-num" min="0" step="1" value="90" inputmode="numeric" aria-label="Logements réalisés (saisie)"/>
+    </div>
+    <div class="ctrl-row">
+      <label for="obligation">Objectif triennal</label>
+      <input type="range" id="obligation" min="0" max="240" step="3" value="60"/>
+      <input type="number" id="obligation-num" min="1" step="1" value="60" inputmode="numeric" aria-label="Objectif triennal (saisie)"/>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><p class="lbl">Tiers de l'objectif</p><p class="num" id="tiers-out">20</p></div>
+    <div class="stat"><p class="lbl">Ratio</p><p class="num" id="ratio-out">4,5</p></div>
+    <div class="stat"><p class="lbl">Durée totale</p><p class="num" id="duree-out">5 ans</p><p class="note" id="duree-note">dont 2 ans de prolongation</p></div>
+  </div>
+
+  <div class="timeline-box">
+    <svg width="100%" viewBox="0 0 680 100" role="img">
+      <title>Durée totale de déduction</title>
+      <desc>Barre sur un axe gradué en années : année N et les deux suivantes, puis prolongation.</desc>
+      <rect id="bar-gray" x="20" y="34" width="96" height="18" rx="3" fill="var(--soft)"/>
+      <rect id="bar-amber" x="116" y="34" width="64" height="18" rx="3" fill="var(--amber)"/>
+      <line x1="20" y1="60" x2="660" y2="60" stroke="var(--line)" stroke-width="1"/>
+      <g id="ticks"></g>
+      <line id="leader-base" x1="116" y1="26" x2="116" y2="34" stroke="var(--soft)" stroke-width="1"/>
+      <text id="label-base" x="113" y="20" font-size="11" fill="var(--soft)" text-anchor="end">3 ans</text>
+      <line id="leader-ext" x1="180" y1="26" x2="180" y2="34" stroke="var(--amber)" stroke-width="1"/>
+      <text id="label-ext" x="183" y="20" font-size="11" font-weight="650" fill="var(--ink)" text-anchor="start">5 ans</text>
+    </svg>
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--soft)"></span>Base : année N et 2 années suivantes (3 ans)</span>
+      <span><span class="swatch" style="background:var(--amber)"></span>Prolongation (ratio &gt; 3 : le ratio = nombre max d'années)</span>
+    </div>
+  </div>
 </div>
 
 <script>
-// ============================================================
-// Colonnes de OP — mappées depuis le panneau Grist (noms logiques du widget)
-// ============================================================
-const CHAMPS = [
-  { cle: "Procedure",            titre: "Procédure" },
-  { cle: "Difficultes",          titre: "Difficultés rencontrées" },
-  { cle: "EffetsLevier",         titre: "Effets de levier pour un déblocage opérationnel" },
-  { cle: "Commentaires",         titre: "Commentaires / délibération CM / participation financière" },
-  { cle: "RemarquePartenaires",  titre: "Remarque partenaires" }
-];
-
-grist.ready({
-  requiredAccess: "full",
-  allowSelectBy: true,
-  columns: [
-    { name: "Libelle", title: "Libellé (affichage)", type: "Any", optional: true },
-    ...CHAMPS.map(c => ({ name: c.cle, title: c.titre, type: "Any", optional: true }))
-  ]
-});
-
-// ============================================================
-// Archives_Commentaires — table séparée, lue/écrite par son nom (comme Foncier_repere,
-// Prospects_PB_2026 ailleurs dans ce projet). Colonnes détectées automatiquement parmi ces
-// candidats : si une colonne n'est pas trouvée, ajoute son nom exact en tête de la liste.
-// ============================================================
-const TABLE_ARCHIVES = "Archives_Commentaires";
-const CANDIDATS_ARCHIVES = {
-  operation: ["Operation", "OP", "Op", "Operation_Ref", "Ref_OP"],
-  annee:     ["Annee", "AnneeBilan", "Annee_Bilan"],
-  date:      ["DateArchivage", "Date_Archivage", "Date"],
-  Procedure:           ["Procedure"],
-  Difficultes:         ["Difficultes"],
-  EffetsLevier:        ["EffetsLevier", "Effets_Levier"],
-  Commentaires:        ["Commentaires"],
-  RemarquePartenaires: ["RemarquePartenaires", "Remarque_Partenaires"]
-};
-
-let colonnesArchives = null;   // { operation:"...", annee:"...", date:"...", Procedure:"...", ... } ou null si table/colonnes introuvables
-let archivesCache = [];        // toutes les lignes de Archives_Commentaires, chargées une seule fois
-let erreurArchives = "";
-
-function trouverColonne(cles, candidats) {
-  for (const c of candidats) {
-    const k = cles.find(cle => cle.toLowerCase() === c.toLowerCase());
-    if (k) return k;
-  }
-  return null;
-}
-
-// Chargement unique au démarrage (pas à chaque sélection de ligne, pour limiter les appels API).
-async function chargerArchives() {
-  try {
-    const donnees = await grist.docApi.fetchTable(TABLE_ARCHIVES);
-    const cles = Object.keys(donnees);
-    const resolues = {};
-    for (const [champ, candidats] of Object.entries(CANDIDATS_ARCHIVES)) {
-      resolues[champ] = trouverColonne(cles, candidats);
-    }
-    if (!resolues.operation || !resolues.annee) {
-      erreurArchives = `Colonnes "Operation" et/ou "Annee" introuvables dans ${TABLE_ARCHIVES}. Colonnes disponibles : ${cles.join(", ")}`;
-      console.warn(erreurArchives);
-      return;
-    }
-    colonnesArchives = resolues;
-    const nb = (donnees.id || []).length;
-    archivesCache = [];
-    for (let i = 0; i < nb; i++) {
-      const ligne = { id: donnees.id[i] };
-      for (const champ of Object.keys(resolues)) {
-        ligne[champ] = resolues[champ] ? donnees[resolues[champ]][i] : null;
-      }
-      archivesCache.push(ligne);
-    }
-  } catch (e) {
-    erreurArchives = `Table "${TABLE_ARCHIVES}" introuvable ou inaccessible — crée-la avant de pouvoir archiver.`;
-    console.warn(erreurArchives, e);
-  }
-}
-
-function formaterDate(epochSecondes) {
-  if (typeof epochSecondes !== "number") return "—";
-  return new Date(epochSecondes * 1000).toLocaleDateString("fr-FR");
-}
-
-// ============================================================
-// État courant
-// ============================================================
-let enregistrement = null;   // ligne OP sélectionnée (brute)
-let mappingsCourants = null; // vrais noms de colonnes OP choisis dans le panneau Grist
-let premierChargementFait = false;
-
+const X0 = 20, X1 = 660, YEARS = 20, PX = (X1 - X0) / YEARS, BASE = 3;
 const $ = id => document.getElementById(id);
 
-function afficherEtatVide() {
-  $("fiche").classList.add("hidden");
-  $("empty").classList.remove("hidden");
-}
-
-function construireChamps() {
-  const conteneur = $("champs");
-  conteneur.innerHTML = "";
-  CHAMPS.forEach(champ => {
-    const colonneReelle = mappingsCourants ? mappingsCourants[champ.cle] : null;
-    const bloc = document.createElement("div");
-    bloc.className = "champ";
-
-    const label = document.createElement("label");
-    label.textContent = champ.titre;
-    bloc.appendChild(label);
-
-    if (!colonneReelle) {
-      const note = document.createElement("div");
-      note.className = "non-mappe";
-      note.textContent = "Colonne non mappée dans les options du widget.";
-      bloc.appendChild(note);
-      conteneur.appendChild(bloc);
-      return;
-    }
-
-    const textarea = document.createElement("textarea");
-    textarea.id = "champ-" + champ.cle;
-    textarea.value = enregistrement[colonneReelle] || "";
-    textarea.addEventListener("blur", () => sauvegarderChamp(champ.cle, colonneReelle, textarea));
-    bloc.appendChild(textarea);
-
-    const etat = document.createElement("div");
-    etat.className = "etat";
-    etat.id = "etat-" + champ.cle;
-    bloc.appendChild(etat);
-
-    conteneur.appendChild(bloc);
-  });
-}
-
-async function sauvegarderChamp(cle, colonneReelle, textarea) {
-  const etat = $("etat-" + cle);
-  try {
-    await grist.getTable("OP").update({ id: enregistrement.id, fields: { [colonneReelle]: textarea.value } });
-    etat.textContent = "Enregistré";
-  } catch (e) {
-    console.error("Échec de l'enregistrement du champ", cle, e);
-    etat.textContent = "Échec de l'enregistrement — réessaie";
-    etat.style.color = "var(--warn)";
+// Axe unique gradué par année : chaque case = une année (N, N+1, ...)
+(function(){
+  let s = '';
+  for (let i = 0; i <= YEARS; i++) {
+    const x = X0 + i * PX;
+    s += `<line x1="${x}" y1="60" x2="${x}" y2="64" stroke="var(--soft)" stroke-width="1"/>`;
+    if (i < YEARS) s += `<text x="${x + PX/2}" y="78" font-size="9" fill="var(--soft)" text-anchor="middle">${i===0?'N':'N+'+i}</text>`;
   }
-  etat.classList.add("show");
-  setTimeout(() => etat.classList.remove("show"), 1800);
-}
+  $('ticks').innerHTML = s;
+})();
 
-function valeurChampActuel(cle) {
-  const ta = $("champ-" + cle);
-  return ta ? ta.value : "";
-}
+const num = v => { const n = parseInt(v, 10); return isNaN(n) ? 0 : Math.max(0, n); };
+const pl = n => n + (n > 1 ? ' ans' : ' an');
 
-async function archiverBilan() {
-  if (!colonnesArchives) {
-    alert(erreurArchives || "Impossible d'archiver : table Archives_Commentaires introuvable.");
+function recalc(){
+  const logements = num($('logements-num').value);
+  const obligation = num($('obligation-num').value);
+
+  if (obligation <= 0) {
+    $('tiers-out').textContent = '—'; $('ratio-out').textContent = '—';
+    $('duree-out').textContent = '—'; $('duree-note').textContent = 'objectif triennal à renseigner';
     return;
   }
-  const bouton = $("btnArchiver");
-  bouton.disabled = true;
-  const annee = new Date().getFullYear();
-  const fields = {
-    [colonnesArchives.operation]: enregistrement.id,
-    [colonnesArchives.annee]: annee,
-    [colonnesArchives.date]: Math.floor(Date.now() / 1000)
-  };
-  CHAMPS.forEach(champ => {
-    const colArchive = colonnesArchives[champ.cle];
-    if (colArchive) fields[colArchive] = valeurChampActuel(champ.cle);
-  });
-  try {
-    const resultat = await grist.getTable(TABLE_ARCHIVES).create({ fields });
-    // Mise à jour optimiste du cache local : évite un nouvel appel fetchTable après chaque archivage.
-    const nouvelleLigne = { id: resultat.id, operation: enregistrement.id, annee, date: fields[colonnesArchives.date] };
-    CHAMPS.forEach(champ => { nouvelleLigne[champ.cle] = fields[colonnesArchives[champ.cle]]; });
-    archivesCache.push(nouvelleLigne);
-    afficherArchives();
-  } catch (e) {
-    console.error("Échec de l'archivage", e);
-    alert("Échec de l'archivage — réessaie.");
+  const tiers = obligation / 3;
+  const ratioBrut = logements / tiers;
+  const ratioEntier = Math.ceil(ratioBrut);
+  const total = ratioEntier > 3 ? ratioEntier : BASE;   // année N incluse
+  const prolongation = total - BASE;
+
+  $('tiers-out').textContent = Math.round(tiers * 10) / 10;
+  $('ratio-out').textContent = (Math.round(ratioBrut * 10) / 10).toString().replace('.', ',');
+  $('duree-out').textContent = pl(total);
+  $('duree-note').textContent = prolongation > 0 ? 'dont ' + pl(prolongation) + ' de prolongation' : 'aucune prolongation';
+
+  const shown = Math.min(total, YEARS);
+  const baseX = X0 + BASE * PX, endX = X0 + shown * PX;
+  $('bar-gray').setAttribute('width', BASE * PX);
+  $('bar-amber').setAttribute('x', baseX);
+  $('bar-amber').setAttribute('width', Math.max(0, endX - baseX));
+
+  const ext = total > BASE;
+  $('leader-ext').style.display = ext ? '' : 'none';
+  $('label-ext').style.display = ext ? '' : 'none';
+  $('leader-base').setAttribute('x1', baseX); $('leader-base').setAttribute('x2', baseX);
+  $('label-base').setAttribute('x', ext ? baseX - 3 : baseX);
+  $('label-base').setAttribute('text-anchor', ext ? 'end' : 'middle');
+  if (ext) {
+    $('label-ext').textContent = pl(total);
+    $('label-ext').setAttribute('x', endX + 3);
+    $('label-ext').setAttribute('text-anchor', endX > 600 ? 'end' : 'start');
+    if (endX > 600) $('label-ext').setAttribute('x', endX - 3);
+    $('leader-ext').setAttribute('x1', endX); $('leader-ext').setAttribute('x2', endX);
   }
-  bouton.disabled = false;
 }
 
-function afficherArchives() {
-  const conteneur = $("listeArchives");
-  conteneur.innerHTML = "";
-
-  const avert = $("avertissementArchives");
-  if (erreurArchives) {
-    avert.textContent = erreurArchives;
-    avert.classList.remove("hidden");
-  } else {
-    avert.classList.add("hidden");
-  }
-
-  if (!colonnesArchives || !enregistrement) return;
-
-  const archivesOp = archivesCache
-    .filter(a => a.operation === enregistrement.id)
-    .sort((a, b) => (b.date || 0) - (a.date || 0));
-
-  if (!archivesOp.length) {
-    const vide = document.createElement("div");
-    vide.className = "vide";
-    vide.textContent = "Aucun bilan archivé pour cette opération.";
-    conteneur.appendChild(vide);
-    return;
-  }
-
-  archivesOp.forEach(archive => {
-    const item = document.createElement("div");
-    item.className = "archive-item";
-
-    const head = document.createElement("div");
-    head.className = "archive-head";
-    const badge = document.createElement("span");
-    badge.className = "annee-badge";
-    badge.textContent = "Bilan " + (archive.annee ?? "—");
-    const date = document.createElement("span");
-    date.className = "date";
-    date.textContent = formaterDate(archive.date);
-    head.appendChild(badge);
-    head.appendChild(date);
-    head.addEventListener("click", () => item.classList.toggle("ouvert"));
-    item.appendChild(head);
-
-    const body = document.createElement("div");
-    body.className = "archive-body";
-    CHAMPS.forEach(champ => {
-      const valeur = archive[champ.cle];
-      if (!valeur) return;
-      const ligne = document.createElement("div");
-      ligne.className = "ligne";
-      const lbl = document.createElement("span");
-      lbl.className = "lbl";
-      lbl.textContent = champ.titre;
-      const texte = document.createElement("div");
-      texte.textContent = valeur; // textContent : pas d'interprétation HTML, pas besoin d'échappement manuel
-      ligne.appendChild(lbl);
-      ligne.appendChild(texte);
-      body.appendChild(ligne);
-    });
-    item.appendChild(body);
-
-    conteneur.appendChild(item);
-  });
-}
-
-function rafraichirFiche() {
-  if (!enregistrement) { afficherEtatVide(); return; }
-  $("empty").classList.add("hidden");
-  $("fiche").classList.remove("hidden");
-
-  const libelle = mappingsCourants && mappingsCourants.Libelle ? enregistrement[mappingsCourants.Libelle] : null;
-  $("titre").textContent = libelle || "Opération";
-  $("sousTitre").textContent = "Bilan " + new Date().getFullYear();
-  $("btnArchiver").textContent = "Archiver le bilan " + new Date().getFullYear();
-
-  construireChamps();
-  afficherArchives();
-}
-
-$("btnArchiver").addEventListener("click", archiverBilan);
-
-grist.onRecord((record, mappings) => {
-  const mapped = grist.mapColumnNames(record);
-  enregistrement = mapped || null;
-  mappingsCourants = mappings;
-  if (enregistrement && !premierChargementFait) {
-    premierChargementFait = true;
-    chargerArchives().then(rafraichirFiche);
-  } else {
-    rafraichirFiche();
-  }
+// curseur -> champ ; champ -> curseur ; le champ est la valeur de référence
+[['logements','logements-num'],['obligation','obligation-num']].forEach(([r,n])=>{
+  $(r).addEventListener('input', () => { $(n).value = $(r).value; recalc(); });
+  $(n).addEventListener('input', () => { $(r).value = num($(n).value); recalc(); });
 });
-
-// Filet de sécurité : si aucune ligne n'est sélectionnée au chargement, on charge quand même
-// le cache des archives une fois, pour qu'il soit prêt dès la première sélection.
-window.addEventListener("load", () => setTimeout(() => {
-  if (!premierChargementFait) { premierChargementFait = true; chargerArchives(); }
-}, 1500));
+recalc();
 </script>
 </body>
 </html>
